@@ -1,0 +1,43 @@
+# Root level .gitignore for My3 project
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+test_db_connection.py
+check_db_tables.py
+verify_tables.py
+
+# Documentation (keep these, but ignore generated ones)
+*.pdf
+!CONCEPT_SUMMARY.md
+!SPRINT_ASSESSMENT.md
+
+# Database dumps
+*.sql
+*.dump
+
+# Docker volumes (if any)
+docker-data/
+
+
+
