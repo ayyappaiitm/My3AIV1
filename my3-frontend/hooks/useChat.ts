@@ -1,65 +1,152 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { apiClient } from '@/lib/api/client'
-import { Message, ChatRequest, ChatResponse } from '@/lib/types'
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { chatAPI } from '@/lib/api/client'
+import { Message } from '@/lib/types'
 
-export function useChat() {
+interface PendingConfirmation {
+  conversationId: string
+  prompt: string
+}
+
+export function useChat(userId: string) {
   const [messages, setMessages] = useState<Message[]>([])
   const [conversationId, setConversationId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null)
+  const queryClient = useQueryClient()
 
-  const sendMessage = useCallback(
-    async (content: string) => {
-      // Add user message immediately
+  // Send message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
+      return chatAPI.sendMessage({
+        message,
+        user_id: userId,
+        conversation_id: conversationId || undefined,
+      })
+    },
+    onMutate: (message) => {
+      // Optimistic update: Add user message immediately
       const userMessage: Message = {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         role: 'user',
-        content,
+        content: message,
+        created_at: new Date().toISOString(),
       }
       setMessages((prev) => [...prev, userMessage])
-      setIsLoading(true)
-
-      try {
-        const request: ChatRequest = {
-          message: content,
-          conversation_id: conversationId || undefined,
-        }
-
-        const response = await apiClient.post<ChatResponse>('/api/chat', request)
-
-        // Update conversation ID
-        if (response.data.conversation_id) {
-          setConversationId(response.data.conversation_id)
-        }
-
-        // Add assistant message
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: response.data.message.content,
-          metadata: response.data.state,
-        }
-        setMessages((prev) => [...prev, assistantMessage])
-      } catch (error) {
-        console.error('Chat error:', error)
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
-        }
-        setMessages((prev) => [...prev, errorMessage])
-      } finally {
-        setIsLoading(false)
-      }
     },
-    [conversationId]
-  )
+    onSuccess: (data) => {
+      // Add AI response
+      const aiMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: data.response,
+        metadata: {
+          gift_ideas: data.gift_ideas,
+          requires_confirmation: data.requires_confirmation,
+          confirmation_prompt: data.confirmation_prompt,
+          conversation_id: data.conversation_id,
+          ...data.metadata,
+        },
+        created_at: new Date().toISOString(),
+      }
+      setMessages((prev) => [...prev, aiMessage])
+
+      // Set conversation ID
+      if (data.conversation_id) {
+        setConversationId(data.conversation_id)
+      }
+
+      // Handle confirmation prompt
+      if (data.requires_confirmation) {
+        setPendingConfirmation({
+          conversationId: data.conversation_id,
+          prompt: data.confirmation_prompt || 'Please confirm this action',
+        })
+      }
+
+      // Invalidate recipients cache (might have been added)
+      queryClient.invalidateQueries({ queryKey: ['recipients', userId] })
+    },
+    onError: (error: any) => {
+      // Extract user-friendly error message
+      const errorMessage = error?.message || 'Failed to send message. Please try again.'
+      
+      // Show specific error toast
+      if (errorMessage.includes('timeout') || errorMessage.includes('connection')) {
+        toast.error('Connection issue', {
+          description: 'Unable to reach the server. Please check your internet connection.',
+        })
+      } else if (errorMessage.includes('session') || errorMessage.includes('expired')) {
+        toast.error('Session expired', {
+          description: 'Please log in again to continue.',
+        })
+      } else {
+        toast.error('Failed to send message', {
+          description: errorMessage,
+        })
+      }
+      
+      console.error('Chat error:', error)
+      
+      // Add error message to chat
+      const chatErrorMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `I'm sorry, but I encountered an error: ${errorMessage}. Please try again, or refresh the page if the problem persists.`,
+        created_at: new Date().toISOString(),
+      }
+      setMessages((prev) => [...prev, chatErrorMessage])
+    },
+  })
+
+  // Confirm action mutation
+  const confirmMutation = useMutation({
+    mutationFn: async (confirmed: boolean) => {
+      if (!conversationId) {
+        throw new Error('No conversation ID available')
+      }
+      return chatAPI.confirm({
+        conversation_id: conversationId,
+        user_id: userId,
+        confirmed,
+      })
+    },
+    onSuccess: (data) => {
+      setPendingConfirmation(null)
+
+      // Add system message
+      const systemMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: data.message || 'Action completed successfully',
+        created_at: new Date().toISOString(),
+      }
+      setMessages((prev) => [...prev, systemMessage])
+
+      // Refresh recipients
+      queryClient.invalidateQueries({ queryKey: ['recipients', userId] })
+
+      toast.success(data.message || 'Action completed successfully')
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.message || 'Failed to confirm action. Please try again.'
+      
+      toast.error('Action failed', {
+        description: errorMessage,
+      })
+      
+      console.error('Confirm action error:', error)
+    },
+  })
 
   return {
     messages,
-    sendMessage,
-    isLoading,
+    sendMessage: sendMessageMutation.mutate,
+    confirmAction: confirmMutation.mutate,
+    isLoading: sendMessageMutation.isPending,
+    pendingConfirmation,
+    conversationId,
   }
 }
-

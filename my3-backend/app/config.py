@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -9,13 +9,18 @@ class Settings(BaseSettings):
     # OpenAI
     openai_api_key: str
     
+    # Address Validation (optional)
+    google_maps_api_key: Optional[str] = None
+    smartystreets_api_key: Optional[str] = None
+    enable_address_validation: bool = True
+    
     # JWT
     secret_key: str
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 10080  # 7 days (7 * 24 * 60)
     
     # CORS
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://localhost:3001"
     
     # Environment
     environment: str = "development"

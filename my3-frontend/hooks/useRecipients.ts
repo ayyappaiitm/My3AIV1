@@ -1,22 +1,21 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api/client'
+import { recipientAPI } from '@/lib/api/client'
 import { Recipient } from '@/lib/types'
 
-export function useRecipients() {
+export function useRecipients(userId: string) {
   const { data: recipients, isLoading, error } = useQuery<Recipient[]>({
-    queryKey: ['recipients'],
-    queryFn: async () => {
-      const response = await apiClient.get<Recipient[]>('/api/recipients')
-      return response.data
-    },
+    queryKey: ['recipients', userId],
+    queryFn: () => recipientAPI.list(userId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
   return {
     recipients: recipients || [],
     isLoading,
     error,
+    count: recipients?.length || 0,
+    hasMaxRecipients: (recipients?.length || 0) >= 10,
   }
 }
-

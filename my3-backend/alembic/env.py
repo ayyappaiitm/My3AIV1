@@ -12,7 +12,7 @@ from app.database.connection import Base
 from app.config import settings
 
 # Import all models so Alembic can detect them
-from app.database.models import User, Recipient, Occasion, GiftIdea, Conversation, Message
+from app.database.models import User, Recipient, Occasion, GiftIdea, Conversation, Message, RecipientRelationship
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

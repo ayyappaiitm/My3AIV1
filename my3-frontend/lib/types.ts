@@ -5,6 +5,12 @@ export interface User {
   created_at: string
 }
 
+export interface RecipientRelationship {
+  to_recipient_id: string
+  relationship_type: string
+  is_bidirectional: boolean
+}
+
 export interface Recipient {
   id: string
   user_id: string
@@ -14,8 +20,18 @@ export interface Recipient {
   interests: string[]
   constraints: string[]
   notes?: string
+  street_address?: string
+  city?: string
+  state_province?: string
+  postal_code?: string
+  country?: string
+  address_validation_status?: 'validated' | 'unvalidated' | 'failed'
   created_at: string
   updated_at: string
+  upcoming_occasions_count?: number
+  is_core_contact?: boolean
+  network_level?: number
+  relationships?: RecipientRelationship[]
 }
 
 export interface Occasion {
@@ -57,8 +73,11 @@ export interface ChatRequest {
 }
 
 export interface ChatResponse {
+  response: string
+  gift_ideas?: any[]
+  requires_confirmation?: boolean
+  confirmation_prompt?: string
   conversation_id: string
-  message: Message
-  state?: any
+  metadata?: any
 }
 

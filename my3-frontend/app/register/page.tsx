@@ -25,7 +25,17 @@ export default function RegisterPage() {
       await register(name, email, password)
       router.push('/dashboard')
     } catch (err: any) {
-      setError(err.message || 'Registration failed')
+      const errorMessage = err.message || 'Registration failed'
+      setError(errorMessage)
+      
+      // If email already exists, suggest logging in
+      if (errorMessage.includes('already registered') || errorMessage.includes('409')) {
+        setTimeout(() => {
+          if (confirm('This email is already registered. Would you like to go to the login page?')) {
+            router.push('/login')
+          }
+        }, 1000)
+      }
     }
   }
 
@@ -56,6 +66,7 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              suppressHydrationWarning
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
             />
           </div>
@@ -70,6 +81,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              suppressHydrationWarning
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
             />
           </div>
@@ -85,6 +97,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
+              suppressHydrationWarning
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent"
             />
             <p className="mt-1 text-xs text-text-light">At least 8 characters</p>

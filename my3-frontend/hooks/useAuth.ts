@@ -15,47 +15,69 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token')
-    if (token) {
-      // Verify token and get user info
-      // For now, we'll just check if token exists
-      // In production, you'd verify with backend
-      setIsLoading(false)
-    } else {
+    const loadUser = async () => {
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        // Try to get user info from token or localStorage
+        // For now, we'll check if user data is in localStorage
+        // In production, you'd verify token with backend
+        const storedUser = localStorage.getItem('user_data')
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser))
+          } catch (e) {
+            // Invalid stored data, clear it
+            localStorage.removeItem('user_data')
+          }
+        }
+      }
       setIsLoading(false)
     }
+    
+    loadUser()
   }, [])
 
   const login = async (email: string, password: string) => {
-    const formData = new URLSearchParams()
-    formData.append('email', email)
-    formData.append('password', password)
+    try {
+      const response = await apiClient.post<AuthResponse>('/api/auth/login', {
+        email,
+        password,
+      })
 
-    const response = await apiClient.post<AuthResponse>('/api/auth/login', formData, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    })
-
-    localStorage.setItem('auth_token', response.data.access_token)
-    setUser(response.data.user)
-    return response.data
+      localStorage.setItem('auth_token', response.data.access_token)
+      localStorage.setItem('user_data', JSON.stringify(response.data.user))
+      setUser(response.data.user)
+      return response.data
+    } catch (error: any) {
+      // Extract error message from API response
+      const errorMessage = error.response?.data?.detail || error.message || 'Login failed'
+      throw new Error(errorMessage)
+    }
   }
 
   const register = async (name: string, email: string, password: string) => {
-    const response = await apiClient.post<User>('/api/auth/register', {
-      name,
-      email,
-      password,
-    })
+    try {
+      const response = await apiClient.post<AuthResponse>('/api/auth/register', {
+        name,
+        email,
+        password,
+      })
 
-    // Auto-login after registration
-    await login(email, password)
-    return response.data
+      // Save token and user from registration response
+      localStorage.setItem('auth_token', response.data.access_token)
+      localStorage.setItem('user_data', JSON.stringify(response.data.user))
+      setUser(response.data.user)
+      return response.data.user
+    } catch (error: any) {
+      // Extract error message from API response
+      const errorMessage = error.response?.data?.detail || error.message || 'Registration failed'
+      throw new Error(errorMessage)
+    }
   }
 
   const logout = () => {
     localStorage.removeItem('auth_token')
+    localStorage.removeItem('user_data')
     setUser(null)
   }
 

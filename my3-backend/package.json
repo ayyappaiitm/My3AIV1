@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "react-particles": "^2.12.2",
+    "react-textarea-autosize": "^8.5.9",
+    "tsparticles": "^3.9.1",
+    "tsparticles-slim": "^2.12.0"
+  }
+}

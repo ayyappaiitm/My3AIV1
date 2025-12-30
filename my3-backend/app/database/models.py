@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Date, DateTime, ForeignKey, Enum as SQLEnum, ARRAY
+from sqlalchemy import Column, String, Text, Date, DateTime, ForeignKey, Enum as SQLEnum, ARRAY, Boolean, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -40,12 +40,24 @@ class Recipient(Base):
     interests = Column(ARRAY(String), default=[])
     constraints = Column(ARRAY(String), default=[])  # allergies, preferences, etc.
     notes = Column(Text)  # optional
+    is_core_contact = Column(Boolean, default=True)  # True for core network, False for secondary
+    network_level = Column(Integer, default=1)  # 1 = core, 2 = secondary, etc.
+    # Address fields
+    street_address = Column(String(255))  # optional
+    city = Column(String(100))  # optional
+    state_province = Column(String(100))  # optional
+    postal_code = Column(String(20))  # optional
+    country = Column(String(100))  # optional
+    address_validation_status = Column(String(20))  # "validated", "unvalidated", "failed", optional
+    validated_address_json = Column(Text)  # Store normalized/validated address from API, optional
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     user = relationship("User", back_populates="recipients")
     occasions = relationship("Occasion", back_populates="recipient", cascade="all, delete-orphan")
+    relationships_from = relationship("RecipientRelationship", foreign_keys="RecipientRelationship.from_recipient_id", back_populates="from_recipient", cascade="all, delete-orphan")
+    relationships_to = relationship("RecipientRelationship", foreign_keys="RecipientRelationship.to_recipient_id", back_populates="to_recipient", cascade="all, delete-orphan")
 
 
 class Occasion(Base):
@@ -108,4 +120,20 @@ class Message(Base):
     
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")
+
+
+class RecipientRelationship(Base):
+    __tablename__ = "recipient_relationships"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    from_recipient_id = Column(UUID(as_uuid=True), ForeignKey("recipients.id", ondelete="CASCADE"), nullable=False)
+    to_recipient_id = Column(UUID(as_uuid=True), ForeignKey("recipients.id", ondelete="CASCADE"), nullable=False)
+    relationship_type = Column(String(100), nullable=False)  # wife, husband, son, daughter, etc.
+    is_bidirectional = Column(Boolean, default=False)  # True for spouse/partner relationships
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    from_recipient = relationship("Recipient", foreign_keys=[from_recipient_id], back_populates="relationships_from")
+    to_recipient = relationship("Recipient", foreign_keys=[to_recipient_id], back_populates="relationships_to")
 

@@ -4,7 +4,8 @@ from fastapi.responses import JSONResponse
 import logging
 import time
 from app.config import settings
-from app.api.routes import auth, chat, recipients
+from app.api.routes import auth, chat, recipients, health
+from app.database.connection import init_db
 
 # Configure logging
 logging.basicConfig(
@@ -20,10 +21,18 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# CORS middleware
+# CORS middleware - Allow all origins in development for easier debugging
+cors_origins = settings.cors_origins_list
+if settings.environment == "development":
+    # In development, allow all localhost ports
+    cors_origins = ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
+    logger.info(f"Development mode: Using permissive CORS origins: {cors_origins}")
+else:
+    logger.info(f"Production mode: CORS origins configured: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,34 +42,63 @@ app.add_middleware(
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
+    
+    # Log incoming request
+    logger.info(f"→ {request.method} {request.url.path}")
+    
     response = await call_next(request)
     duration = time.time() - start_time
     
-    logger.info({
-        "path": request.url.path,
-        "method": request.method,
-        "status": response.status_code,
-        "duration": f"{duration:.3f}s"
-    })
+    logger.info(f"← {request.method} {request.url.path} - {response.status_code} ({duration:.3f}s)")
     
     return response
 
 # Include routers
+# Note: Routers already have prefixes defined, so we don't add them here
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(recipients.router)
+app.include_router(health.router)
 
 
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "my3-backend"}
+# Root endpoint
+@app.get("/")
+async def root():
+    """Root endpoint with API information."""
+    return {"message": "My3 API - Your AI Gift Concierge"}
+
+
+# Startup event
+@app.on_event("startup")
+async def startup():
+    """Initialize database on startup."""
+    try:
+        await init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}", exc_info=True)
+        # Don't raise - allow app to start even if DB init fails
+        # (migrations should handle this in production)
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler."""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    import traceback
+    error_trace = traceback.format_exc()
+    logger.error(f"Unhandled exception: {exc}\n{error_trace}", exc_info=True)
+    
+    # In development, return more details
+    if settings.environment == "development":
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Internal server error",
+                "error": str(exc),
+                "type": type(exc).__name__
+            }
+        )
+    
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"}
