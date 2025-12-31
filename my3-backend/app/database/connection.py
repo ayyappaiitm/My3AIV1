@@ -6,9 +6,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Transform database URL for async driver if needed
+# Railway and some providers use postgresql:// which loads psycopg2 (sync)
+# We need postgresql+asyncpg:// for async SQLAlchemy
+database_url = settings.database_url
+if database_url.startswith("postgresql://") and not database_url.startswith("postgresql+asyncpg://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    logger.info("Transformed database URL to use asyncpg driver")
+elif database_url.startswith("postgresql+asyncpg://"):
+    logger.debug("Database URL already uses asyncpg driver")
+else:
+    logger.debug(f"Database URL scheme: {database_url.split('://')[0] if '://' in database_url else 'unknown'}")
+
 # Create async engine with proper pool settings
 engine = create_async_engine(
-    settings.database_url,
+    database_url,
     echo=settings.environment == "development",
     future=True,
     # Connection pool settings
@@ -18,7 +30,7 @@ engine = create_async_engine(
     pool_recycle=3600,  # Recycle connections after 1 hour (prevents stale connections)
     pool_timeout=30,  # Timeout for getting connection from pool
     # Use NullPool for SQLite, regular pool for PostgreSQL
-    poolclass=None if "postgresql" in settings.database_url.lower() else NullPool,
+    poolclass=None if "postgresql" in database_url.lower() else NullPool,
 )
 
 # Create async session factory

@@ -100,3 +100,23 @@ The workflow consists of 6 nodes:
 - Create migration: `alembic revision --autogenerate -m "description"`
 - Apply migration: `alembic upgrade head`
 
+## Production Deployment
+
+### Railway Deployment
+
+For deploying to Railway, see:
+- **[RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md)** - Complete deployment guide
+- **[RAILWAY_QUICK_START.md](./RAILWAY_QUICK_START.md)** - Quick checklist
+
+**Quick steps:**
+1. Create Railway project from GitHub repo
+2. Add PostgreSQL database
+3. Set environment variables (see deployment guide)
+4. Deploy and run migrations: `railway run alembic upgrade head`
+5. Verify: `https://your-service.railway.app/api/health`
+
+**Generate SECRET_KEY:**
+```bash
+python generate_secret_key.py
+```
+

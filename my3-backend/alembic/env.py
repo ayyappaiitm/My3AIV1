@@ -24,8 +24,16 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set the SQLAlchemy URL from settings
-# For Alembic, we need to use sync driver, so convert asyncpg to psycopg2
-db_url = settings.database_url.replace("+asyncpg", "+psycopg2")
+# For Alembic, we need to use sync driver (psycopg2), not async (asyncpg)
+# Handle both postgresql:// (Railway) and postgresql+asyncpg:// (transformed) URLs
+db_url = settings.database_url
+if db_url.startswith("postgresql://") and "+" not in db_url:
+    # Railway provides postgresql://, convert to postgresql+psycopg2:// for Alembic
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+elif db_url.startswith("postgresql+asyncpg://"):
+    # If already using asyncpg, convert to psycopg2 for Alembic
+    db_url = db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+# If already using psycopg2, leave it as is
 config.set_main_option("sqlalchemy.url", db_url)
 
 # add your model's MetaData object here
