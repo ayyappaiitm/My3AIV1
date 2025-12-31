@@ -51,6 +51,14 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
   const [selectedRecipient, setSelectedRecipient] = useState<RecipientDetail | null>(null)
   // Responsive: check on mount and resize - declare early so it can be used in useEffect
   const [isMounted, setIsMounted] = useState(false)
+  
+  // Debug logging helper - only log in development
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  const debugLog = (...args: any[]) => {
+    if (isDevelopment) {
+      console.log(...args)
+    }
+  }
 
   // Set mounted state after component mounts
   useEffect(() => {
@@ -59,17 +67,53 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
 
   // Fetch recipient details for tooltip
   const fetchRecipientDetails = async (recipientId: string) => {
+    // First check if we already have it cached
     if (recipientDetails.has(recipientId)) {
       return recipientDetails.get(recipientId)!
     }
 
+    // Try to use recipient data from props first (no API call needed)
+    const recipientFromProps = recipients.find(r => r.id === recipientId)
+    if (recipientFromProps) {
+      // Create a basic detail object from props data
+      const basicDetails: RecipientDetail = {
+        id: recipientFromProps.id,
+        user_id: recipientFromProps.user_id || '',
+        name: recipientFromProps.name,
+        relationship: recipientFromProps.relationship,
+        age_band: recipientFromProps.age_band,
+        interests: recipientFromProps.interests || [],
+        constraints: recipientFromProps.constraints || [],
+        notes: recipientFromProps.notes,
+        street_address: recipientFromProps.street_address,
+        city: recipientFromProps.city,
+        state_province: recipientFromProps.state_province,
+        postal_code: recipientFromProps.postal_code,
+        country: recipientFromProps.country,
+        address_validation_status: recipientFromProps.address_validation_status,
+        created_at: recipientFromProps.created_at || '',
+        updated_at: recipientFromProps.updated_at || '',
+        upcoming_occasions_count: recipientFromProps.upcoming_occasions_count,
+        occasions: recipientFromProps.occasions,
+        past_gifts: recipientFromProps.past_gifts
+      }
+      setRecipientDetails(prev => new Map(prev).set(recipientId, basicDetails))
+      return basicDetails
+    }
+
+    // Only fetch from API if we need more details (occasions, past_gifts)
     try {
       const response = await apiClient.get<RecipientDetail>(`/api/recipients/${recipientId}`)
       const details = response.data
       setRecipientDetails(prev => new Map(prev).set(recipientId, details))
       return details
-    } catch (error) {
-      console.error('Failed to fetch recipient details:', error)
+    } catch (error: any) {
+      // Silently fail - we already have basic data from props
+      // Only log if it's not a network error (which is expected in some environments)
+      if (error?.code !== 'ERR_NETWORK' && error?.message !== 'Network Error') {
+        console.warn('Failed to fetch recipient details from API:', error)
+      }
+      // Return null to indicate we couldn't fetch enhanced details
       return null
     }
   }
@@ -153,7 +197,7 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
         }
         // Retry after a short delay if refs aren't ready
         if (retryCount % 10 === 0) { // Log every 10th retry to reduce spam
-          console.log(`NetworkGraph: Refs not ready, retrying... (${retryCount}/${MAX_RETRIES})`, {
+          debugLog(`NetworkGraph: Refs not ready, retrying... (${retryCount}/${MAX_RETRIES})`, {
             svgRef: !!svgRef.current,
             containerRef: !!containerRef.current,
             window: typeof window !== 'undefined',
@@ -170,17 +214,32 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
       const svg = d3.select(svgRef.current)
       svg.selectAll('*').remove()
 
-      // Get container dimensions - use actual container size
+      // Get container dimensions - use actual container size with fallbacks
       const container = containerRef.current
-      const width = container.clientWidth || window.innerWidth || 800
-      const height = container.clientHeight || (window.innerHeight - 64) || 600
+      const width = container.clientWidth || container.offsetWidth || window.innerWidth || 800
+      const height = container.clientHeight || container.offsetHeight || (window.innerHeight - 64) || 600
       
-      console.log('NetworkGraph: Rendering graph', {
+      // Validate container dimensions
+      if (width === 0 || height === 0) {
+        console.warn('NetworkGraph: Container has zero dimensions', { 
+          width, 
+          height,
+          clientWidth: container.clientWidth,
+          clientHeight: container.clientHeight,
+          offsetWidth: container.offsetWidth,
+          offsetHeight: container.offsetHeight
+        })
+        return
+      }
+      
+      debugLog('NetworkGraph: Rendering graph', {
         width,
         height,
         recipientsCount: recipients.length,
         containerWidth: container.clientWidth,
-        containerHeight: container.clientHeight
+        containerHeight: container.clientHeight,
+        offsetWidth: container.offsetWidth,
+        offsetHeight: container.offsetHeight
       })
       
       // Set SVG dimensions - use 100% to fill container, viewBox for scaling
@@ -188,7 +247,24 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
         .attr('height', '100%')
         .attr('viewBox', `0 0 ${width} ${height}`)
         .attr('preserveAspectRatio', 'xMidYMid meet')
-        .style('background', 'transparent') // Ensure background is transparent
+        .style('background', 'transparent')
+      
+      // Log SVG dimensions for debugging
+      if (isDevelopment) {
+        const svgElement = svg.node()
+        if (svgElement) {
+          const svgRect = svgElement.getBoundingClientRect()
+          debugLog('NetworkGraph: SVG dimensions', {
+            viewBox: `0 0 ${width} ${height}`,
+            boundingRect: {
+              width: svgRect.width,
+              height: svgRect.height,
+              x: svgRect.x,
+              y: svgRect.y
+            }
+          })
+        }
+      }
 
       // Add SVG filters for shadow and glow
       const defs = svg.append('defs')
@@ -244,7 +320,7 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
 
       // Handle empty state - show placeholder message
       if (recipients.length === 0) {
-        console.log('NetworkGraph: No recipients, showing empty state', { width, height })
+        debugLog('NetworkGraph: No recipients, showing empty state', { width, height })
         // Add a subtle background circle to make it more visible
         svg.append('circle')
           .attr('cx', width / 2)
@@ -277,29 +353,52 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
         return
       }
 
-      console.log('NetworkGraph: Rendering', recipients.length, 'recipients', recipients)
+      debugLog('NetworkGraph: Rendering', recipients.length, 'recipients', recipients)
 
-      // Create nodes with recipient data
-      const nodes = recipients.map((r) => ({
-        id: r.id,
-        name: r.name,
-        type: 'recipient',
-        recipient: r,
-        fx: undefined as number | undefined,
-        fy: undefined as number | undefined,
-        vx: 0,
-        vy: 0
-      }))
+      // Create nodes with recipient data and initial positions
+      const nodes = recipients.map((r, i) => {
+        // Initialize nodes with circular layout positions
+        // Ensure safe division and spread nodes evenly
+        const nodeCount = recipients.length || 1
+        const angle = (i / nodeCount) * 2 * Math.PI
+        const radius = Math.min(width, height) * 0.3
+        const initialX = width / 2 + Math.cos(angle) * radius
+        const initialY = height / 2 + Math.sin(angle) * radius
+        
+        // Ensure positions are valid numbers
+        const x = isNaN(initialX) ? width / 2 : initialX
+        const y = isNaN(initialY) ? height / 2 : initialY
+        
+        return {
+          id: r.id,
+          name: r.name,
+          type: 'recipient',
+          recipient: r,
+          x: x,
+          y: y,
+          fx: undefined as number | undefined,
+          fy: undefined as number | undefined,
+          vx: 0,
+          vy: 0
+        }
+      })
 
-      // Create links from relationships
-      const links: Array<{ source: string; target: string; relationship: string }> = []
+      debugLog('NetworkGraph: Created nodes with initial positions', nodes.map(n => ({ 
+        id: n.id, 
+        name: n.name, 
+        x: n.x, 
+        y: n.y 
+      })))
+
+      // Create links from relationships - use string IDs initially
+      const linkData: Array<{ source: string; target: string; relationship: string }> = []
       recipients.forEach((recipient) => {
         if (recipient.relationships && recipient.relationships.length > 0) {
           recipient.relationships.forEach((rel) => {
             // Check if target recipient exists in nodes
             const targetExists = nodes.some((n) => n.id === rel.to_recipient_id)
             if (targetExists) {
-              links.push({
+              linkData.push({
                 source: recipient.id,
                 target: rel.to_recipient_id,
                 relationship: rel.relationship_type
@@ -309,7 +408,11 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
         }
       })
 
+      debugLog('NetworkGraph: Created links', linkData.length, 'links', linkData)
+
       // Create force simulation
+      // Note: forceLink will convert string IDs to node objects using the id accessor
+      // The id accessor is called on nodes to extract their ID for matching with link source/target
       const simulation = d3
         .forceSimulation(nodes as any)
         .force('charge', d3.forceManyBody().strength(-200))
@@ -317,21 +420,9 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
         .force('collision', d3.forceCollide().radius(70)) // Increased for larger nodes
         .force('x', d3.forceX(width / 2).strength(0.05))
         .force('y', d3.forceY(height / 2).strength(0.05))
-        .force('link', d3.forceLink(links).id((d: any) => d.id).distance(150).strength(0.5))
+        .force('link', d3.forceLink(linkData).id((d: any) => d.id).distance(150).strength(0.5))
 
-      // Draw links (edges) for relationships
-      const linkGroup = svg.append('g').attr('class', 'links')
-      const linkElements = linkGroup
-        .selectAll('line')
-        .data(links)
-        .enter()
-        .append('line')
-        .attr('stroke', '#94A3B8')
-        .attr('stroke-width', 2)
-        .attr('stroke-opacity', 0.6)
-        .attr('marker-end', 'url(#arrowhead)')
-
-      // Add arrowhead marker for directed edges
+      // Add arrowhead marker for directed edges (before links so it's available)
       const marker = defs.append('marker')
         .attr('id', 'arrowhead')
         .attr('viewBox', '0 -5 10 10')
@@ -345,6 +436,19 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
         .attr('d', 'M0,-5L10,0L0,5')
         .attr('fill', '#94A3B8')
 
+      // Draw links (edges) for relationships - draw FIRST so nodes appear on top
+      // After forceLink processes the links, they will have node objects as source/target
+      const linkGroup = svg.append('g').attr('class', 'links')
+      const linkElements = linkGroup
+        .selectAll('line')
+        .data(linkData)
+        .enter()
+        .append('line')
+        .attr('stroke', '#94A3B8')
+        .attr('stroke-width', 2)
+        .attr('stroke-opacity', 0.6)
+        .attr('marker-end', 'url(#arrowhead)')
+
       // Create node groups (for badge positioning)
       const nodeGroups = svg
         .append('g')
@@ -355,32 +459,44 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
         .append('g')
         .attr('class', 'node-group')
         .style('cursor', 'pointer')
-        .style('transform', 'translateZ(0)') // GPU acceleration
         .style('pointer-events', 'all') // Enable pointer events for nodes
+        // Apply initial transform immediately using initial positions
+        .attr('transform', (d: any) => {
+          const x = d.x ?? width / 2
+          const y = d.y ?? height / 2
+          return `translate(${x}, ${y})`
+        })
 
-      // Draw circles with shadow
+      debugLog('NetworkGraph: Created node groups', {
+        count: nodeGroups.size(),
+        nodes: nodes.map((n: any) => ({ id: n.id, name: n.name, x: n.x, y: n.y }))
+      })
+
+      // Draw circles with shadow - make them more visible for debugging
       const nodeCircles = nodeGroups
         .append('circle')
         .attr('r', 50) // Increased size for visibility
+        .attr('cx', 0) // Center circle at group origin (transform handles positioning)
+        .attr('cy', 0) // Center circle at group origin (transform handles positioning)
         .attr('fill', (d: any) => {
           if (activeRecipientId && d.id === activeRecipientId) {
-            return '#FF6B6B'
+            return '#FF6B6B' // Bright red for active
           }
           const recipient = recipients.find(r => r.id === d.id)
           if (recipient?.relationship) {
             const rel = recipient.relationship.toLowerCase()
             if (['mom', 'dad', 'sister', 'brother', 'sibling'].includes(rel)) {
-              return '#FF6B6B'
+              return '#FF6B6B' // Bright red for family
             } else if (['wife', 'husband', 'partner', 'spouse'].includes(rel)) {
-              return '#FFA07A'
+              return '#FFA07A' // Coral for partner
             } else if (['friend', 'buddy', 'pal'].includes(rel)) {
-              return '#14B8A6'
+              return '#14B8A6' // Teal for friends
             }
           }
-          return '#CBD5E1'
+          return '#3B82F6' // Bright blue as default (changed from gray for visibility)
         })
         .attr('stroke', '#fff')
-        .attr('stroke-width', 4) // Increased stroke width
+        .attr('stroke-width', 4) // Increased stroke width for visibility
         .attr('filter', (d: any) => {
           if (activeRecipientId && d.id === activeRecipientId) {
             return 'url(#node-glow)'
@@ -415,11 +531,41 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
             .style('opacity', 1)
             .attr('r', 55) // Increased hover size
         
-          // Fetch and show tooltip
+          // Fetch and show tooltip - use recipient data from props if API fails
           const details = await fetchRecipientDetails(d.id)
+          const recipientFromProps = recipients.find(r => r.id === d.id)
+          
           if (details) {
             setTooltip({
               recipient: details,
+              x: event.pageX,
+              y: event.pageY
+            })
+          } else if (recipientFromProps) {
+            // Fallback: create tooltip from props data if API fetch failed
+            const basicDetails: RecipientDetail = {
+              id: recipientFromProps.id,
+              user_id: recipientFromProps.user_id || '',
+              name: recipientFromProps.name,
+              relationship: recipientFromProps.relationship,
+              age_band: recipientFromProps.age_band,
+              interests: recipientFromProps.interests || [],
+              constraints: recipientFromProps.constraints || [],
+              notes: recipientFromProps.notes,
+              street_address: recipientFromProps.street_address,
+              city: recipientFromProps.city,
+              state_province: recipientFromProps.state_province,
+              postal_code: recipientFromProps.postal_code,
+              country: recipientFromProps.country,
+              address_validation_status: recipientFromProps.address_validation_status,
+              created_at: recipientFromProps.created_at || '',
+              updated_at: recipientFromProps.updated_at || '',
+              upcoming_occasions_count: recipientFromProps.upcoming_occasions_count,
+              occasions: recipientFromProps.occasions,
+              past_gifts: recipientFromProps.past_gifts
+            }
+            setTooltip({
+              recipient: basicDetails,
               x: event.pageX,
               y: event.pageY
             })
@@ -527,44 +673,121 @@ export function NetworkGraph({ recipients, activeRecipientId, onNodeClick, isTyp
         
         animationFrameRef.current = requestAnimationFrame(() => {
           // Update link positions
+          // After forceLink processes links, source/target are node objects
           linkElements
-            .attr('x1', (d: any) => (d.source as any).x || 0)
-            .attr('y1', (d: any) => (d.source as any).y || 0)
-            .attr('x2', (d: any) => (d.target as any).x || 0)
-            .attr('y2', (d: any) => (d.target as any).y || 0)
+            .attr('x1', (d: any) => {
+              const source = typeof d.source === 'object' ? d.source : nodes.find(n => n.id === d.source)
+              return source?.x ?? width / 2
+            })
+            .attr('y1', (d: any) => {
+              const source = typeof d.source === 'object' ? d.source : nodes.find(n => n.id === d.source)
+              return source?.y ?? height / 2
+            })
+            .attr('x2', (d: any) => {
+              const target = typeof d.target === 'object' ? d.target : nodes.find(n => n.id === d.target)
+              return target?.x ?? width / 2
+            })
+            .attr('y2', (d: any) => {
+              const target = typeof d.target === 'object' ? d.target : nodes.find(n => n.id === d.target)
+              return target?.y ?? height / 2
+            })
           
-          // Update node positions
+          // Update node positions - ensure transform always has valid coordinates
           nodeGroups.attr('transform', (d: any) => {
-            if (d.x === undefined || d.y === undefined) return 'translate(0, 0)'
-            return `translate(${d.x}, ${d.y})`
+            const x = d.x ?? width / 2
+            const y = d.y ?? height / 2
+            // Validate coordinates are numbers
+            if (isNaN(x) || isNaN(y)) {
+              console.warn('NetworkGraph: Invalid node position', { id: d.id, x, y })
+              return `translate(${width / 2}, ${height / 2})`
+            }
+            return `translate(${x}, ${y})`
           })
         })
       })
 
+      // Verify nodes are in DOM before simulation
+      if (isDevelopment) {
+        const nodeGroupsInDOMBefore = nodeGroups.nodes().length
+        const circlesInDOMBefore = nodeGroups.selectAll('circle').nodes().length
+        debugLog('NetworkGraph: Before simulation', {
+          nodeGroups: nodeGroupsInDOMBefore,
+          circles: circlesInDOMBefore,
+          expectedNodes: nodes.length
+        })
+      }
+      
       // Run simulation for initial positioning
       simulation.stop()
       for (let i = 0; i < 100; i++) {
         simulation.tick()
       }
       
+      // Log node positions after initial simulation
+      if (isDevelopment) {
+        const nodePositions = nodes.map((n: any) => ({ 
+          id: n.id, 
+          name: n.name,
+          x: n.x, 
+          y: n.y,
+          isValid: !isNaN(n.x) && !isNaN(n.y) && n.x !== undefined && n.y !== undefined
+        }))
+        debugLog('NetworkGraph: Nodes after initial simulation', nodePositions)
+      }
+      
       // Update link positions after initial simulation
       linkElements
-        .attr('x1', (d: any) => (d.source as any).x || 0)
-        .attr('y1', (d: any) => (d.source as any).y || 0)
-        .attr('x2', (d: any) => (d.target as any).x || 0)
-        .attr('y2', (d: any) => (d.target as any).y || 0)
+        .attr('x1', (d: any) => {
+          const source = typeof d.source === 'object' ? d.source : nodes.find(n => n.id === d.source)
+          return source?.x ?? width / 2
+        })
+        .attr('y1', (d: any) => {
+          const source = typeof d.source === 'object' ? d.source : nodes.find(n => n.id === d.source)
+          return source?.y ?? height / 2
+        })
+        .attr('x2', (d: any) => {
+          const target = typeof d.target === 'object' ? d.target : nodes.find(n => n.id === d.target)
+          return target?.x ?? width / 2
+        })
+        .attr('y2', (d: any) => {
+          const target = typeof d.target === 'object' ? d.target : nodes.find(n => n.id === d.target)
+          return target?.y ?? height / 2
+        })
       
-      // Update positions after initial simulation
+      // Update positions after initial simulation - ensure transform always has valid coordinates
       nodeGroups.attr('transform', (d: any) => {
-        if (d.x === undefined || d.y === undefined || isNaN(d.x) || isNaN(d.y)) {
-          // If node hasn't been positioned, place it at center initially
-          console.log('Node not positioned, placing at center', d)
+        const x = d.x ?? width / 2
+        const y = d.y ?? height / 2
+        // Validate coordinates are numbers
+        if (isNaN(x) || isNaN(y)) {
+          console.warn('NetworkGraph: Invalid node position after simulation', { id: d.id, name: d.name, x, y })
           return `translate(${width / 2}, ${height / 2})`
         }
-        return `translate(${d.x}, ${d.y})`
+        return `translate(${x}, ${y})`
       })
       
-      console.log('NetworkGraph: Nodes positioned', nodes.map((n: any) => ({ id: n.id, x: n.x, y: n.y })))
+      // Verify transforms are applied
+      if (isDevelopment) {
+        const transforms = nodeGroups.nodes().map((node: any) => {
+          const transform = node.getAttribute('transform')
+          return transform
+        })
+        debugLog('NetworkGraph: Transforms applied', {
+          count: transforms.length,
+          sample: transforms.slice(0, 3),
+          allValid: transforms.every(t => t && t.startsWith('translate'))
+        })
+        
+        // Verify nodes are in DOM after simulation
+        const nodeGroupsInDOM = nodeGroups.nodes().length
+        const circlesInDOM = nodeGroups.selectAll('circle').nodes().length
+        debugLog('NetworkGraph: After simulation', {
+          nodeGroups: nodeGroupsInDOM,
+          circles: circlesInDOM,
+          expectedNodes: nodes.length,
+          match: nodeGroupsInDOM === nodes.length && circlesInDOM === nodes.length
+        })
+      }
       
       // Restart simulation with lower alpha for subtle movement
       simulation.alpha(0.1).restart()

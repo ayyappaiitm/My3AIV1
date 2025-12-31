@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { Logo } from '@/components/ui/Logo'
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -43,9 +44,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-            My3
-          </h1>
+          <div className="flex justify-center mb-4">
+            <Logo variant="auth" showSubtitle={true} />
+          </div>
           <p className="text-text-light">Create your account</p>
         </div>
         

@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { Logo } from '@/components/ui/Logo'
 
 export function Hero() {
   return (
     <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
-      <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
-        My3
-      </h1>
+      <div className="mb-6">
+        <Logo variant="hero" showSubtitle={true} className="justify-center" />
+      </div>
       <p className="text-2xl md:text-3xl text-text mb-4 max-w-2xl">
         Your AI-powered personal relationship and gifting concierge
       </p>

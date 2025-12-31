@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import { User, Search, LogOut, Settings, Network } from 'lucide-react'
+import { Logo } from '@/components/ui/Logo'
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -21,13 +22,7 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-[#FF6B6B] to-[#FFA07A] bg-clip-text text-transparent">
-                My3
-              </h1>
-            </div>
-          </div>
+          <Logo variant="header" />
 
           {/* Search (Optional - placeholder for future) */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">
