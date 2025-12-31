@@ -32,7 +32,8 @@ const getCategoryEmoji = (category?: string): string => {
 
 export function GiftInlineCard({ gift, compact = false, onShortlist }: GiftInlineCardProps) {
   const categoryEmoji = getCategoryEmoji(gift.category)
-  const isShortlisted = gift.is_shortlisted === 'true' || gift.is_shortlisted === true
+  // Convert string to boolean - handle string 'true' or '1'
+  const isShortlisted = gift.is_shortlisted === 'true' || gift.is_shortlisted === '1'
 
   return (
     <motion.div
