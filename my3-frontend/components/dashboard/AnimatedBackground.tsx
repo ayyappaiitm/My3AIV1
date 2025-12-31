@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import Particles from '@tsparticles/react'
 import { loadSlim } from '@tsparticles/slim'
-import { loadLinksInteraction } from '@tsparticles/interaction-particles-links'
-import { loadExternalConnectInteraction } from '@tsparticles/interaction-external-connect'
 import type { Engine } from '@tsparticles/engine'
 
 export function AnimatedBackground() {
@@ -14,12 +12,8 @@ export function AnimatedBackground() {
   const particlesInit = useCallback(async (engine: Engine) => {
     try {
       console.log('AnimatedBackground: Initializing particles...')
-      // Load the slim bundle which includes basic features
+      // Load the slim bundle which includes basic features, links, and external connect
       await loadSlim(engine)
-      // Load links plugin for particle connections
-      await loadLinksInteraction(engine)
-      // Load external connect plugin for hover interactions
-      await loadExternalConnectInteraction(engine)
       console.log('AnimatedBackground: Particles initialized successfully')
       setIsReady(true)
     } catch (err) {

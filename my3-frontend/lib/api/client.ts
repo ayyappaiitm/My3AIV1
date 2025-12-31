@@ -1,32 +1,80 @@
 import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+// Determine API URL based on environment
+const getApiUrl = () => {
+  // In production, use the environment variable or default to production URL
+  if (typeof window !== 'undefined') {
+    // Client-side: use environment variable
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  }
+  // Server-side: prefer production URL if available
+  return process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:8000'
+}
+
+const API_URL = getApiUrl()
 
 export const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 seconds timeout for production
+  // Retry configuration will be handled by interceptors
 })
 
 // Add auth token to requests
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// Enhanced error handling interceptor
-apiClient.interceptors.response.use(
-  (response) => response,
+apiClient.interceptors.request.use(
+  (config) => {
+    // Only access localStorage on client-side
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+    return config
+  },
   (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// Enhanced error handling interceptor with retry logic
+apiClient.interceptors.response.use(
+  (response) => {
+    // Log successful requests in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`API ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`)
+    }
+    return response
+  },
+  async (error) => {
+    const originalRequest = error.config
+
+    // Retry logic for network errors and 5xx errors
+    if (
+      !originalRequest._retry &&
+      (!error.response || (error.response?.status >= 500 && error.response?.status < 600))
+    ) {
+      originalRequest._retry = true
+      originalRequest._retryCount = (originalRequest._retryCount || 0) + 1
+
+      // Only retry up to 2 times
+      if (originalRequest._retryCount <= 2) {
+        // Exponential backoff: wait 1s, then 2s
+        const delay = originalRequest._retryCount * 1000
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        return apiClient(originalRequest)
+      }
+    }
+
     // Handle authentication errors
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('user_data')
-      window.location.href = '/login'
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user_data')
+        window.location.href = '/login'
+      }
       return Promise.reject(new Error('Your session has expired. Please log in again.'))
     }
 
@@ -36,7 +84,9 @@ apiClient.interceptors.response.use(
         return Promise.reject(new Error('Request timed out. Please check your connection and try again.'))
       }
       if (error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
-        return Promise.reject(new Error('Unable to connect to the server. Please check your internet connection.'))
+        return Promise.reject(
+          new Error('Unable to connect to the server. Please check your internet connection.')
+        )
       }
       return Promise.reject(new Error('Network error. Please try again later.'))
     }
@@ -49,7 +99,7 @@ apiClient.interceptors.response.use(
       case 400:
         return Promise.reject(new Error(data?.detail || 'Invalid request. Please check your input and try again.'))
       case 403:
-        return Promise.reject(new Error('You don\'t have permission to perform this action.'))
+        return Promise.reject(new Error("You don't have permission to perform this action."))
       case 404:
         return Promise.reject(new Error('The requested resource was not found.'))
       case 409:

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AnimatedBackground } from './AnimatedBackground'
+// import { AnimatedBackground } from './AnimatedBackground' // Commented out for deployment
 import { ChatWindow } from './ChatWindow'
 import { Header } from './Header'
 import { useAuth } from '@/hooks/useAuth'
@@ -63,8 +63,8 @@ export function DashboardLayout() {
       {/* Header */}
       <Header />
 
-      {/* Animated Background */}
-      <div 
+      {/* Animated Background - Commented out for deployment */}
+      {/* <div 
         className="absolute inset-0" 
         style={{ 
           top: '64px',
@@ -75,7 +75,20 @@ export function DashboardLayout() {
         }}
       >
         <AnimatedBackground />
-      </div>
+      </div> */}
+      
+      {/* Simple gradient background placeholder */}
+      <div 
+        className="absolute inset-0" 
+        style={{ 
+          top: '64px',
+          width: '100%',
+          height: 'calc(100vh - 64px)',
+          zIndex: 0,
+          pointerEvents: 'none',
+          background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, rgba(255, 160, 122, 0.05) 50%, rgba(20, 184, 166, 0.05) 100%)',
+        }}
+      />
       
       {/* Chat Window Overlay - Centered */}
       <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none px-2 sm:px-4" style={{ top: '64px' }}>
