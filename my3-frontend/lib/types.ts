@@ -32,6 +32,8 @@ export interface Recipient {
   is_core_contact?: boolean
   network_level?: number
   relationships?: RecipientRelationship[]
+  occasions?: Occasion[]
+  past_gifts?: GiftIdea[]
 }
 
 export interface Occasion {
