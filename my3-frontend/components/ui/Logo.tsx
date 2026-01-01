@@ -31,13 +31,17 @@ export function Logo({ variant = 'header', showSubtitle = false, className = '' 
       {!imageError && (
         <div className="flex-shrink-0" style={{ width: config.logo, height: config.logo }}>
           <Image
-            src="/logo.svg"
+            src="/logo.svg?v=2"
             alt="My3 Logo"
             width={config.logo}
             height={config.logo}
             priority
             className="w-full h-full object-contain"
-            onError={() => setImageError(true)}
+            onError={() => {
+              console.warn('Logo image failed to load, falling back to text')
+              setImageError(true)
+            }}
+            unoptimized={true}
           />
         </div>
       )}
