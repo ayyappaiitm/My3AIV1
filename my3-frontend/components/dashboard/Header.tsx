@@ -75,6 +75,15 @@ export function Header() {
                     <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
+                  {/* View Network - visible on mobile, hidden on desktop (where it's in the main nav) */}
+                  <Link
+                    href="/network"
+                    onClick={() => setShowProfileMenu(false)}
+                    className="md:hidden w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <Network className="w-4 h-4 mr-2" />
+                    View Network
+                  </Link>
                   <button
                     onClick={() => {
                       setShowProfileMenu(false)
