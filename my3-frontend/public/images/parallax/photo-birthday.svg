@@ -1,0 +1,44 @@
+<svg width="500" height="500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad-birthday-photo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFA07A;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#FF6B6B;stop-opacity:0.4" />
+    </linearGradient>
+    <filter id="shadow-birthday">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="2" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Photo frame -->
+  <rect x="50" y="50" width="400" height="400" rx="10" fill="white" opacity="0.9" filter="url(#shadow-birthday)" />
+  <rect x="60" y="60" width="380" height="380" rx="6" fill="url(#grad-birthday-photo)" />
+  
+  <!-- Birthday cake -->
+  <rect x="150" y="200" width="200" height="120" rx="5" fill="#FF6B6B" opacity="0.6" />
+  <ellipse cx="250" cy="200" rx="100" ry="25" fill="#FFA07A" opacity="0.7" />
+  <ellipse cx="250" cy="180" rx="80" ry="20" fill="#FFD700" opacity="0.6" />
+  
+  <!-- Candles -->
+  <rect x="220" cy="150" width="8" height="40" fill="#14B8A6" opacity="0.7" />
+  <rect x="242" cy="150" width="8" height="40" fill="#14B8A6" opacity="0.7" />
+  <rect x="264" cy="150" width="8" height="40" fill="#14B8A6" opacity="0.7" />
+  
+  <!-- Flames -->
+  <ellipse cx="224" cy="145" rx="4" ry="6" fill="#FFD700" opacity="0.8" />
+  <ellipse cx="246" cy="145" rx="4" ry="6" fill="#FFD700" opacity="0.8" />
+  <ellipse cx="268" cy="145" rx="4" ry="6" fill="#FFD700" opacity="0.8" />
+  
+  <!-- Confetti -->
+  <circle cx="100" cy="100" r="5" fill="#FF6B6B" opacity="0.6" />
+  <circle cx="400" cy="120" r="5" fill="#14B8A6" opacity="0.6" />
+  <circle cx="120" cy="400" r="5" fill="#FFD700" opacity="0.6" />
+  <circle cx="380" cy="380" r="5" fill="#FF6B6B" opacity="0.6" />
+</svg>
+

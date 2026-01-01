@@ -1,0 +1,23 @@
+<svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad-occasion" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#FFA07A;stop-opacity:0.2" />
+    </linearGradient>
+  </defs>
+  <!-- Birthday cake -->
+  <rect x="200" y="150" width="200" height="120" rx="5" fill="url(#grad-occasion)" />
+  <ellipse cx="300" cy="150" rx="100" ry="20" fill="#FFA07A" opacity="0.5" />
+  <circle cx="250" cy="180" r="8" fill="#FFD700" opacity="0.6" />
+  <circle cx="300" cy="180" r="8" fill="#FFD700" opacity="0.6" />
+  <circle cx="350" cy="180" r="8" fill="#FFD700" opacity="0.6" />
+  
+  <!-- Gift icon -->
+  <rect x="100" y="250" width="80" height="80" rx="3" fill="#14B8A6" opacity="0.4" />
+  <polygon points="100,250 140,220 180,250" fill="#14B8A6" opacity="0.5" />
+  
+  <!-- Heart icon -->
+  <path d="M 450 200 Q 440 190, 430 200 Q 430 210, 450 230 Q 470 210, 470 200 Q 470 190, 460 200 Q 450 190, 450 200" 
+        fill="#FF6B6B" opacity="0.4" />
+</svg>
+

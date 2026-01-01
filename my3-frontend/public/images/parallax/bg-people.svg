@@ -1,0 +1,33 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="grad-person1" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#FF6B6B;stop-opacity:0" />
+    </radialGradient>
+    <radialGradient id="grad-person2" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#14B8A6;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#14B8A6;stop-opacity:0" />
+    </radialGradient>
+    <radialGradient id="grad-person3" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  <!-- Person 1 (center-top) -->
+  <circle cx="200" cy="150" r="50" fill="url(#grad-person1)" />
+  
+  <!-- Person 2 (left-bottom) -->
+  <circle cx="150" cy="250" r="40" fill="url(#grad-person2)" />
+  
+  <!-- Person 3 (right-bottom) -->
+  <circle cx="250" cy="250" r="40" fill="url(#grad-person3)" />
+  
+  <!-- Connection lines -->
+  <line x1="200" y1="200" x2="150" y2="210" stroke="#FF6B6B" stroke-width="3" opacity="0.4" />
+  <line x1="200" y1="200" x2="250" y2="210" stroke="#FF6B6B" stroke-width="3" opacity="0.4" />
+  
+  <!-- Heart icon (subtle) -->
+  <path d="M 200 180 Q 190 170, 180 180 Q 180 190, 200 210 Q 220 190, 220 180 Q 220 170, 210 180 Q 200 170, 200 180" 
+        fill="#FF6B6B" opacity="0.2" />
+</svg>
+

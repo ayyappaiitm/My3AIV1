@@ -1,0 +1,28 @@
+<svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad-calendar" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#14B8A6;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#14B8A6;stop-opacity:0.1" />
+    </linearGradient>
+  </defs>
+  <!-- Calendar frame -->
+  <rect x="50" y="50" width="500" height="300" rx="10" fill="none" stroke="#14B8A6" stroke-width="3" opacity="0.4" />
+  
+  <!-- Month header -->
+  <rect x="50" y="50" width="500" height="60" rx="10" fill="url(#grad-calendar)" />
+  <text x="300" y="85" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#14B8A6" opacity="0.6" text-anchor="middle">Special Dates</text>
+  
+  <!-- Date markers -->
+  <circle cx="150" cy="150" r="8" fill="#14B8A6" opacity="0.5" />
+  <circle cx="300" cy="150" r="8" fill="#14B8A6" opacity="0.5" />
+  <circle cx="450" cy="150" r="8" fill="#14B8A6" opacity="0.5" />
+  
+  <!-- Divider line -->
+  <line x1="50" y1="200" x2="550" y2="200" stroke="#14B8A6" stroke-width="2" opacity="0.3" />
+  
+  <!-- Occasion icons (simplified) -->
+  <circle cx="150" cy="250" r="12" fill="#FF6B6B" opacity="0.4" />
+  <circle cx="300" cy="250" r="12" fill="#FFA07A" opacity="0.4" />
+  <circle cx="450" cy="250" r="12" fill="#14B8A6" opacity="0.4" />
+</svg>
+

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 // import { AnimatedBackground } from './AnimatedBackground' // Commented out for deployment
 import { ChatWindow } from './ChatWindow'
 import { Header } from './Header'
+import { ParallaxBackground } from '@/components/landing/ParallaxBackground'
 import { useAuth } from '@/hooks/useAuth'
 import { useRecipients } from '@/hooks/useRecipients'
 import { useChat } from '@/hooks/useChat'
@@ -45,11 +46,13 @@ export function DashboardLayout() {
     return (
       <div className="min-h-screen bg-[#FFF9F5]">
         <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)] px-2 sm:px-4">
-          <div className="w-full max-w-2xl">
-            <ChatWindowSkeleton />
+        <ParallaxBackground>
+          <div className="flex items-center justify-center h-[calc(100vh-64px)] px-2 sm:px-4">
+            <div className="w-full max-w-2xl">
+              <ChatWindowSkeleton />
+            </div>
           </div>
-        </div>
+        </ParallaxBackground>
       </div>
     )
   }
@@ -59,25 +62,13 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF9F5] relative">
-      {/* Header */}
-      <Header />
+    <div className="min-h-screen relative">
+      {/* Header - Fixed at top */}
+      <div className="relative z-40">
+        <Header />
+      </div>
 
-      {/* Animated Background - Commented out for deployment */}
-      {/* <div 
-        className="absolute inset-0" 
-        style={{ 
-          top: '64px',
-          width: '100%',
-          height: 'calc(100vh - 64px)',
-          zIndex: 0,
-          pointerEvents: 'none' // Allow clicks to pass through to chat
-        }}
-      >
-        <AnimatedBackground />
-      </div> */}
-      
-      {/* Simple gradient background placeholder */}
+      {/* Parallax Background - Behind content */}
       <div 
         className="absolute inset-0" 
         style={{ 
@@ -85,23 +76,31 @@ export function DashboardLayout() {
           width: '100%',
           height: 'calc(100vh - 64px)',
           zIndex: 0,
-          pointerEvents: 'none',
-          background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, rgba(255, 160, 122, 0.05) 50%, rgba(20, 184, 166, 0.05) 100%)',
         }}
-      />
-      
-      {/* Chat Window Overlay - Centered */}
-      <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none px-2 sm:px-4" style={{ top: '64px' }}>
-        <div className="pointer-events-auto flex items-center justify-center w-full">
-          <ChatWindow
-            messages={messages}
-            onSendMessage={sendMessage}
-            onConfirm={confirmAction}
-            isLoading={chatLoading}
-            pendingConfirmation={pendingConfirmation}
-            preFillMessage={preFillMessage}
-          />
-        </div>
+      >
+        <ParallaxBackground>
+          <div className="h-full flex items-center justify-center px-2 sm:px-4">
+            {/* Frosted glass container for ChatWindow */}
+            <div 
+              className="relative z-30 backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 rounded-3xl p-6 md:p-8 max-w-4xl w-full shadow-2xl border border-white/30"
+              style={{
+                backdropFilter: 'blur(24px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+              }}
+            >
+              <ChatWindow
+                messages={messages}
+                onSendMessage={sendMessage}
+                onConfirm={confirmAction}
+                isLoading={chatLoading}
+                pendingConfirmation={pendingConfirmation}
+                preFillMessage={preFillMessage}
+              />
+            </div>
+          </div>
+        </ParallaxBackground>
       </div>
     </div>
   )

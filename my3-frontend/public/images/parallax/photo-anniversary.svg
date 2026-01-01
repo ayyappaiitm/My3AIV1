@@ -1,0 +1,34 @@
+<svg width="550" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad-anniversary-photo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:0.4" />
+    </linearGradient>
+    <filter id="shadow-anniversary">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="2" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Photo frame -->
+  <rect x="50" y="50" width="450" height="300" rx="8" fill="white" opacity="0.9" filter="url(#shadow-anniversary)" />
+  <rect x="60" y="60" width="430" height="280" rx="5" fill="url(#grad-anniversary-photo)" />
+  
+  <!-- Heart -->
+  <path d="M 275 150 Q 250 130, 225 150 Q 225 170, 275 220 Q 325 170, 325 150 Q 325 130, 300 150 Q 275 130, 275 150" 
+        fill="#FF6B6B" opacity="0.5" />
+  
+  <!-- Rings -->
+  <circle cx="200" cy="200" r="25" fill="none" stroke="#FFD700" stroke-width="3" opacity="0.6" />
+  <circle cx="350" cy="200" r="25" fill="none" stroke="#FFD700" stroke-width="3" opacity="0.6" />
+  
+  <!-- Date text -->
+  <text x="275" y="280" font-family="Arial, sans-serif" font-size="18" fill="white" opacity="0.7" text-anchor="middle">Anniversary</text>
+</svg>
+

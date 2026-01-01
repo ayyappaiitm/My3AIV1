@@ -1,0 +1,22 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="grad-sparkle" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:0.7" />
+      <stop offset="100%" style="stop-color:#FFD700;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  <!-- Sparkle elements scattered -->
+  <circle cx="100" cy="80" r="4" fill="url(#grad-sparkle)" />
+  <circle cx="250" cy="120" r="3" fill="url(#grad-sparkle)" />
+  <circle cx="180" cy="200" r="5" fill="url(#grad-sparkle)" />
+  <circle cx="320" cy="180" r="3" fill="url(#grad-sparkle)" />
+  <circle cx="150" cy="300" r="4" fill="url(#grad-sparkle)" />
+  <circle cx="280" cy="280" r="3" fill="url(#grad-sparkle)" />
+  
+  <!-- Star shapes -->
+  <path d="M 200 100 L 205 110 L 215 110 L 207 117 L 210 127 L 200 120 L 190 127 L 193 117 L 185 110 L 195 110 Z" 
+        fill="#FFD700" opacity="0.5" />
+  <path d="M 300 250 L 303 255 L 308 255 L 304 259 L 306 264 L 300 261 L 294 264 L 296 259 L 292 255 L 297 255 Z" 
+        fill="#FFD700" opacity="0.4" />
+</svg>
+

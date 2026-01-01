@@ -30,7 +30,7 @@ export default function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen">
         <Hero />
         <Features />
         <Demo />
