@@ -43,6 +43,7 @@ export function Header() {
             <Link
               href="/network"
               className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium text-gray-700"
+              suppressHydrationWarning
             >
               <Network className="w-4 h-4" />
               <span>View Network</span>
@@ -54,6 +55,7 @@ export function Header() {
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
               className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              suppressHydrationWarning
             >
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#FF6B6B] to-[#FFA07A] flex items-center justify-center text-white font-semibold text-sm">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
@@ -80,6 +82,7 @@ export function Header() {
                     href="/network"
                     onClick={() => setShowProfileMenu(false)}
                     className="md:hidden w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    suppressHydrationWarning
                   >
                     <Network className="w-4 h-4 mr-2" />
                     View Network

@@ -54,9 +54,11 @@ export interface GiftIdea {
   occasion_id: string
   title: string
   description?: string
+  personalized_reason?: string
   price?: string
   category?: string
   url?: string
+  image_url?: string
   is_shortlisted: string
   created_at: string
 }

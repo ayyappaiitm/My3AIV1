@@ -38,10 +38,12 @@ class PersonInfo(BaseModel):
 class GiftIdea(BaseModel):
     """Gift idea structure."""
     title: str = Field(description="Gift title/name")
-    description: str = Field(description="Detailed description")
+    description: str = Field(description="Detailed description (2-3 sentences)")
+    personalized_reason: str = Field(description="Two-line personalized rationale explaining why this gift is perfect for the recipient")
     price: str = Field(description="Price or price range (e.g., '$50', '$20-30')")
     category: str = Field(description="Gift category (e.g., 'electronics', 'books', 'experiences')")
     url: Optional[str] = Field(None, description="Product URL if available")
+    image_url: Optional[str] = Field(None, description="Direct image URL from product page if available")
 
 
 class GiftIdeasList(BaseModel):
@@ -685,14 +687,17 @@ async def generate_gifts_node(state: AgentState) -> Dict[str, Any]:
         system_prompt = """You are a gift recommendation expert. Generate 5 personalized, thoughtful gift ideas.
 For each gift, provide:
 - title: Clear, descriptive name
-- description: 2-3 sentences explaining why it's a good gift
+- description: 2-3 sentences explaining why it's a good gift (for detailed view)
+- personalized_reason: Two-line personalized rationale explaining why this gift is perfect for the recipient (e.g., "Perfect for Sarah who loves gardening. This thoughtful gift combines her passion for plants with practical use." or "Great for your tech-savvy friend. It's a cutting-edge gadget that matches their interests.")
 - price: Price or price range (e.g., "$50", "$20-30")
 - category: Category (electronics, books, experiences, clothing, home, etc.)
 - url: Product URL if you know a specific one, otherwise None
+- image_url: Direct image URL from the product page if available, otherwise None
 
 Make gifts thoughtful, personalized, and appropriate for the recipient.
 Consider their interests, age, and relationship to the gift giver.
-Include a mix of price ranges and categories."""
+Include a mix of price ranges and categories.
+The personalized_reason should be concise (one sentence) and highlight why this gift is perfect for this specific recipient."""
         
         if partner_info:
             system_prompt += "\n\nIMPORTANT: This is an anniversary gift. Consider BOTH partners' interests when generating gift ideas. Suggest gifts that both people can enjoy together, experiences they can share, or items that enhance their relationship."
@@ -714,9 +719,11 @@ Include a mix of price ranges and categories."""
             {
                 "title": gift.title,
                 "description": gift.description,
+                "personalized_reason": gift.personalized_reason,
                 "price": gift.price,
                 "category": gift.category,
-                "url": gift.url
+                "url": gift.url,
+                "image_url": gift.image_url
             }
             for gift in result.gift_ideas
         ]
@@ -763,12 +770,23 @@ async def compose_response_node(state: AgentState) -> Dict[str, Any]:
         
         if current_intent == "gift_search":
             if gift_ideas:
-                # Format gift ideas nicely
-                gift_list = "\n".join([
-                    f"{i+1}. **{gift['title']}** - {gift['price']}\n   {gift['description']}"
-                    for i, gift in enumerate(gift_ideas)
-                ])
-                ai_response = f"Here are some personalized gift ideas:\n\n{gift_list}\n\nWould you like me to save these suggestions or look for more options?"
+                # Simple message - gift cards will show the details
+                recipient_name = None
+                if matched_recipient_id:
+                    matched_recipient = next(
+                        (r for r in user_recipients if r.get("id") == matched_recipient_id),
+                        None
+                    )
+                    if matched_recipient:
+                        recipient_name = matched_recipient.get("name")
+                
+                if not recipient_name and detected_person:
+                    recipient_name = detected_person.get("name")
+                
+                if recipient_name:
+                    ai_response = f"Here are some personalized gift ideas for {recipient_name}:"
+                else:
+                    ai_response = "Here are some personalized gift ideas:"
             else:
                 # No gift ideas generated - check if we have recipient info
                 recipient_name = None

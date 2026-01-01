@@ -86,9 +86,11 @@ class GiftIdea(Base):
     occasion_id = Column(UUID(as_uuid=True), ForeignKey("occasions.id", ondelete="CASCADE"), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text)
+    personalized_reason = Column(Text)  # One-line personalized reason
     price = Column(String(50))  # "$49.99" or price range
     category = Column(String(100))  # electronics, books, experiences, etc.
     url = Column(String(500))  # link to product/experience
+    image_url = Column(String(500))  # direct image URL from product page
     is_shortlisted = Column(String(10), default="false")  # "true" or "false" as string for LangGraph compatibility
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

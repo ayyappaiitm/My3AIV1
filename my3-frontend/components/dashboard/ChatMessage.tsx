@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import { ConfirmationPrompt } from './ConfirmationPrompt'
-import { GiftInlineCard } from './GiftInlineCard'
+import { GiftCarousel } from './GiftCarousel'
 import { Message } from '@/lib/types'
 
 interface ChatMessageProps {
@@ -160,21 +160,22 @@ export function ChatMessage({ message, onConfirm, onCancel }: ChatMessageProps) 
         )}
       </div>
       
-      {/* Gift ideas inline (if any) */}
+      {/* Gift ideas as carousel (if any) */}
       {!isUser && giftIdeas && giftIdeas.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
-          className="mt-2 max-w-[80%] space-y-3"
+          className="mt-4 max-w-full"
         >
-          {giftIdeas.map((gift: any, index: number) => (
-            <GiftInlineCard
-              key={gift.id || index}
-              gift={gift}
-              compact={false}
-            />
-          ))}
+          <GiftCarousel
+            gifts={giftIdeas}
+            recipientName={message.metadata?.recipient_name}
+            onCategoryLike={(category) => {
+              // TODO: Implement category like feedback - can be used for future recommendations
+              console.log('Category liked:', category)
+            }}
+          />
         </motion.div>
       )}
       

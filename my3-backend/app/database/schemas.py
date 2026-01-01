@@ -158,9 +158,11 @@ class OccasionResponse(OccasionBase):
 class GiftIdeaBase(BaseModel):
     title: str
     description: Optional[str] = None
+    personalized_reason: Optional[str] = None
     price: Optional[str] = None
     category: Optional[str] = None
     url: Optional[HttpUrl] = None
+    image_url: Optional[HttpUrl] = None
     is_shortlisted: str = "false"
     
     @field_validator('url', mode='before')
@@ -172,6 +174,14 @@ class GiftIdeaBase(BaseModel):
         # HttpUrl will validate the format automatically
         # This validator allows empty strings to be converted to None
         return v if v else None
+    
+    @field_validator('image_url', mode='before')
+    @classmethod
+    def validate_image_url_format(cls, v: Optional[str]) -> Optional[str]:
+        """Validate image URL format."""
+        if v is None or v == "":
+            return None
+        return v if v else None
 
 
 class GiftIdeaCreate(GiftIdeaBase):
@@ -181,9 +191,11 @@ class GiftIdeaCreate(GiftIdeaBase):
 class GiftIdeaUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    personalized_reason: Optional[str] = None
     price: Optional[str] = None
     category: Optional[str] = None
     url: Optional[HttpUrl] = None
+    image_url: Optional[HttpUrl] = None
     is_shortlisted: Optional[str] = None
     
     @field_validator('url', mode='before')
@@ -193,6 +205,14 @@ class GiftIdeaUpdate(BaseModel):
         if v is None or v == "":
             return None
         # HttpUrl will validate the format automatically
+        return v if v else None
+    
+    @field_validator('image_url', mode='before')
+    @classmethod
+    def validate_image_url_format(cls, v: Optional[str]) -> Optional[str]:
+        """Validate image URL format."""
+        if v is None or v == "":
+            return None
         return v if v else None
 
 
